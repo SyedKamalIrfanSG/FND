@@ -1,0 +1,196 @@
+*{
+  margin:0;
+  padding:0;
+  box-sizing:border-box;
+  font-family:Arial, sans-serif;
+}
+
+body{
+  background:#f5f5f5;
+}
+
+.app{
+  padding:20px;
+}
+
+/* Navbar */
+
+.navbar{
+  background:white;
+  padding:15px 25px;
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  border-radius:8px;
+  box-shadow:0 2px 8px rgba(0,0,0,0.1);
+}
+
+.logo-section{
+  display:flex;
+  align-items:center;
+  gap:15px;
+}
+
+.logo{
+  width:40px;
+  height:40px;
+  border-radius:10px;
+  background:#4f6df5;
+  color:white;
+  display:flex;
+  justify-content:center;
+  align-items:center;
+}
+
+.logo-section p{
+  font-size:12px;
+  color:gray;
+}
+
+.nav-buttons button{
+  border:none;
+  color:white;
+  padding:10px 15px;
+  border-radius:8px;
+  margin-left:10px;
+  cursor:pointer;
+}
+
+.admin-btn{
+  background:#c82333;
+}
+
+.logout-btn{
+  background:#5fa8ff;
+}
+
+/* Layout */
+
+.container{
+  display:flex;
+  gap:30px;
+  margin-top:25px;
+}
+
+.left-section{
+  flex:2;
+}
+
+.right-section{
+  flex:1;
+}
+
+/* Info Box */
+
+.info-box{
+  background:#dff0ff;
+  padding:20px;
+  border-radius:12px;
+  margin-bottom:30px;
+}
+
+.info-box h4{
+  color:#007bff;
+  margin-bottom:10px;
+}
+
+/* Analyze Box */
+
+.analyze-box{
+  background:white;
+  padding:30px;
+  border-radius:15px;
+  box-shadow:0 2px 8px rgba(0,0,0,0.1);
+}
+
+.analyze-box h1{
+  margin-right: 370px;
+  font-size : 30px;
+  margin-top: 0px;
+}
+
+textarea{
+  width:100%;
+  height:180px;
+  padding:15px;
+  border:1px solid #999;
+  border-radius:10px;
+  resize:none;
+}
+
+.analyze-box button{
+  width:100%;
+  margin-top:10px;
+  padding:15px;
+  border:none;
+  border-radius:10px;
+  background:#8fd3f4;
+  cursor:pointer;
+  font-size:16px;
+}
+
+/* Right Cards */
+
+.stats-box,
+.recent-box{
+  background:white;
+  padding:25px;
+  border-radius:12px;
+  margin-bottom:20px;
+  box-shadow:0 2px 8px rgba(0,0,0,0.08);
+}
+
+.stats-box h2,
+.recent-box h2{
+  margin-bottom:20px;
+}
+
+
+.stats-box{
+  display:flex;
+  flex-direction:column;
+  align-items:flex-start;
+}
+
+.stats-box h2{
+  align-self:flex-start;
+}
+
+.stats-box p,
+.stats-box span{
+  margin-top:10px;
+}
+
+.red{
+
+  color:red;
+}
+
+.green{
+  color:limegreen;
+}
+
+.empty{
+  color:gray;
+}
+
+.recent-item{
+  border-bottom:1px solid #ddd;
+  padding-bottom:10px;
+  margin-bottom:10px;
+}
+
+/* Responsive */
+
+@media(max-width:900px){
+
+  .container{
+    flex-direction:column;
+  }
+
+  .navbar{
+    flex-direction:column;
+    gap:15px;
+  }
+
+}

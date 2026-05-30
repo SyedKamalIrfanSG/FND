@@ -39,14 +39,15 @@ function App() {
         />
 
         <Route
-          path="/dashboard"
-          element={<Dashboard />}
+          path="/admindashboard"
+          element={<Admindashboard />}
         />
 
         <Route
           path="/admin-panel"
           element={<AdminPanel />}
         />
+      
 
       </Routes>
 
