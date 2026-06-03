@@ -1,5 +1,6 @@
 import React, { useState } from "react";
-import "..styles/admindashboard.css";
+import "../styles/admindashboard.css";
+
 
 function Admindashboard() {
   const [news, setNews] = useState("");
@@ -141,4 +142,4 @@ function Admindashboard() {
   );
 }
 
-export default Fnd;
+export default Admindashboard;

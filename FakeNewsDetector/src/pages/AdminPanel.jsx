@@ -4,7 +4,7 @@ import "../styles/adminpanel.css";
 
 function AdminPanel() {
 
-  const navigate = useNavigate();
+  const navigate = useNavigate("/admindashboard");
 
   // ADMIN INFO
   const [adminData] = useState({
@@ -67,12 +67,12 @@ function AdminPanel() {
       prevUsers.map((user) =>
         user.id === id
           ? {
-              ...user,
-              status:
-                user.status === "active"
-                  ? "blocked"
-                  : "active",
-            }
+            ...user,
+            status:
+              user.status === "active"
+                ? "blocked"
+                : "active",
+          }
           : user
       )
     );
@@ -84,12 +84,12 @@ function AdminPanel() {
       prevUsers.map((user) =>
         user.id === id
           ? {
-              ...user,
-              role:
-                user.role === "Admin"
-                  ? "User"
-                  : "Admin",
-            }
+            ...user,
+            role:
+              user.role === "Admin"
+                ? "User"
+                : "Admin",
+          }
           : user
       )
     );
@@ -143,7 +143,7 @@ function AdminPanel() {
 
         <div className="header-right">
 
-          <Link to="/dashboard" className="header-btn">
+          <Link to="/admindashboard" className="header-btn">
             <i className="fa-solid fa-arrow-left"></i>
             Back to App
           </Link>
@@ -152,7 +152,7 @@ function AdminPanel() {
             <h4>{adminData.name}</h4>
             <p>{adminData.email}</p>
           </div>
-
+          
           <button
             className="header-btn"
             onClick={handleLogout}

@@ -3,27 +3,10 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
 import AdminPanel from "./pages/AdminPanel";
-
-function Dashboard() {
-  return (
-    <div
-      style={{
-        display: "flex",
-        justifyContent: "center",
-        alignItems: "center",
-        height: "100vh",
-        fontSize: "40px",
-        fontWeight: "bold",
-      }}
-    >
-      User Dashboard
-    </div>
-  );
-}
+import Admindashboard from "./pages/Admindashboard";
 
 function App() {
   return (
-
     <BrowserRouter>
 
       <Routes>
@@ -47,12 +30,10 @@ function App() {
           path="/admin-panel"
           element={<AdminPanel />}
         />
-      
 
       </Routes>
 
     </BrowserRouter>
-
   );
 }
 
