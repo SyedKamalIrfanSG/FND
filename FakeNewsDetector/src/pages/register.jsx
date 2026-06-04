@@ -1,7 +1,29 @@
-import { Link } from "react-router-dom";
+import { useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import "../styles/register.css";
 
 function Register() {
+  const navigate = useNavigate();
+
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+
+  const handleRegister = (e) => {
+    e.preventDefault();
+
+    if (!password.includes("USER135")) {
+      alert(
+        "Password must contain USER135\n\nExample:\nmypasswordUSER135"
+      );
+      return;
+    }
+
+    alert("Account Created Successfully!");
+
+    navigate("/");
+  };
+
   return (
     <div className="main-container">
 
@@ -10,7 +32,8 @@ function Register() {
         <img
           src="/detective.jpeg"
           alt="detective"
-          width="300"></img>
+          width="300"
+        />
       </div>
 
       {/* RIGHT SECTION */}
@@ -39,32 +62,46 @@ function Register() {
             LOGIN
           </Link>
 
-          <Link to="/register" className="tab active">
+          <Link
+            to="/register"
+            className="tab active"
+          >
             <i className="fa-solid fa-user-plus"></i>
-            REGISTER 
-            
+            REGISTER
           </Link>
 
         </div>
 
         {/* FORM */}
-        <form>
+        <form onSubmit={handleRegister}>
 
           <input
             type="text"
             placeholder="Full Name"
+            value={name}
+            onChange={(e) =>
+              setName(e.target.value)
+            }
             required
           />
 
           <input
             type="email"
             placeholder="Email"
+            value={email}
+            onChange={(e) =>
+              setEmail(e.target.value)
+            }
             required
           />
 
           <input
             type="password"
             placeholder="Password"
+            value={password}
+            onChange={(e) =>
+              setPassword(e.target.value)
+            }
             required
           />
 
@@ -74,6 +111,10 @@ function Register() {
           >
             Create Account
           </button>
+
+          <p className="password-note">
+            Password must contain <strong>USER135</strong>
+          </p>
 
         </form>
 

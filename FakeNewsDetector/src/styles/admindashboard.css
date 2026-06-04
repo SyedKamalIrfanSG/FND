@@ -24,6 +24,18 @@ body{
   border-radius:8px;
   box-shadow:0 2px 8px rgba(0,0,0,0.1);
 }
+.admin-btn{
+  background:#4f63ff;
+  border:none;
+  color:white;
+  padding:10px 22px;
+  border-radius:8px;
+  cursor:pointer;
+}
+
+.admin-btn:hover{
+  opacity:0.9;
+}
 
 .logo-section{
   display:flex;

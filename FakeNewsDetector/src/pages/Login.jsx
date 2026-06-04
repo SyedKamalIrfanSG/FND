@@ -1,7 +1,29 @@
-import { Link } from "react-router-dom";
+import { useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import "../styles/login.css";
 
 function Login() {
+  const navigate = useNavigate();
+
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+
+  const handleLogin = (e) => {
+    e.preventDefault();
+
+    if (password.includes("USER135")) {
+      navigate("/user-dashboard");
+    }
+    else if (password.includes("ADMIN690")) {
+      navigate("/admin-dashboard");
+    }
+    else {
+      alert(
+        "Invalid Password!\n\nUser Password Format:\nYourPasswordUSER135\n\nAdmin Password Format:\nYourPasswordADMIN690"
+      );
+    }
+  };
+
   return (
     <div className="main-container">
 
@@ -46,27 +68,37 @@ function Login() {
         </div>
 
         {/* FORM */}
-
-        <form>
+        <form onSubmit={handleLogin}>
 
           <input
             type="email"
             placeholder="Email"
+            value={email}
+            onChange={(e) =>
+              setEmail(e.target.value)
+            }
             required
           />
 
           <input
             type="password"
             placeholder="Password"
+            value={password}
+            onChange={(e) =>
+              setPassword(e.target.value)
+            }
             required
           />
 
-          <Link
-            to="/user-dashboard"
+          <button
+            type="submit"
             className="signin-btn"
           >
             Sign In
-          </Link>
+          </button>
+              <p className="password-note">
+            Password must contain <strong>USER135</strong>
+          </p>
 
         </form>
 
