@@ -9,19 +9,44 @@ function Register() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
-  const handleRegister = (e) => {
+  // ✅ REGISTER FUNCTION (FIXED)
+  const handleRegister = async (e) => {
     e.preventDefault();
 
+    // Password rule (your custom rule)
     if (!password.includes("USER135")) {
-      alert(
-        "Password must contain USER135\n\nExample:\nmypasswordUSER135"
-      );
+      alert("Password must contain USER135\nExample: mypasswordUSER135");
       return;
     }
 
-    alert("Account Created Successfully!");
+    try {
+      const response = await fetch("http://127.0.0.1:5000/register", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          username: name,
+          email: email,
+          password: password
+        })
+      });
 
-    navigate("/");
+      const data = await response.json();
+
+      console.log("Server Response:", data);
+
+      if (response.ok) {
+        alert("Account Created Successfully!");
+        navigate("/");
+      } else {
+        alert(data.message || "Registration failed");
+      }
+
+    } catch (error) {
+      console.error("Error:", error);
+      alert("Cannot connect to server");
+    }
   };
 
   return (
@@ -29,11 +54,7 @@ function Register() {
 
       {/* LEFT IMAGE */}
       <div className="left-section">
-        <img
-          src="/detective.jpeg"
-          alt="detective"
-          width="300"
-        />
+        <img src="/detective.jpeg" alt="detective" width="300" />
       </div>
 
       {/* RIGHT SECTION */}
@@ -41,13 +62,10 @@ function Register() {
 
         {/* LOGO */}
         <div className="logo-title">
-
           <div className="logo-box">
             <i className="fa-solid fa-shield-halved"></i>
           </div>
-
           <h1>Fake News Detection System</h1>
-
         </div>
 
         <p className="subtitle">
@@ -56,20 +74,15 @@ function Register() {
 
         {/* TABS */}
         <div className="tabs">
-
           <Link to="/" className="tab">
             <i className="fa-solid fa-right-to-bracket"></i>
             LOGIN
           </Link>
 
-          <Link
-            to="/register"
-            className="tab active"
-          >
+          <Link to="/register" className="tab active">
             <i className="fa-solid fa-user-plus"></i>
             REGISTER
           </Link>
-
         </div>
 
         {/* FORM */}
@@ -79,9 +92,7 @@ function Register() {
             type="text"
             placeholder="Full Name"
             value={name}
-            onChange={(e) =>
-              setName(e.target.value)
-            }
+            onChange={(e) => setName(e.target.value)}
             required
           />
 
@@ -89,9 +100,7 @@ function Register() {
             type="email"
             placeholder="Email"
             value={email}
-            onChange={(e) =>
-              setEmail(e.target.value)
-            }
+            onChange={(e) => setEmail(e.target.value)}
             required
           />
 
@@ -99,16 +108,11 @@ function Register() {
             type="password"
             placeholder="Password"
             value={password}
-            onChange={(e) =>
-              setPassword(e.target.value)
-            }
+            onChange={(e) => setPassword(e.target.value)}
             required
           />
 
-          <button
-            type="submit"
-            className="signin-btn"
-          >
+          <button type="submit" className="signin-btn">
             Create Account
           </button>
 
@@ -119,7 +123,6 @@ function Register() {
         </form>
 
       </div>
-
     </div>
   );
 }
