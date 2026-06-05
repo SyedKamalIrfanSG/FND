@@ -143,7 +143,7 @@ function AdminPanel() {
 
         <div className="header-right">
 
-          <Link to="/admindashboard" className="header-btn">
+          <Link to="/admin-dashboard" className="header-btn">
             <i className="fa-solid fa-arrow-left"></i>
             Back to App
           </Link>
