@@ -1,6 +1,7 @@
 from flask import Flask, request, jsonify
 from flask_cors import CORS
-import mysql.connector
+import psycopg2
+import psycopg2.extras
 import joblib
 import os
 
@@ -8,41 +9,28 @@ app = Flask(__name__)
 CORS(app)
 
 # ==========================
-# CONFIG (from env vars for production)
+# DATABASE CONFIG (POSTGRES)
 # ==========================
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+DATABASE_URL = os.environ.get("DATABASE_URL")
 
-DB_HOST = os.environ.get("DB_HOST", "localhost")
-DB_USER = os.environ.get("DB_USER", "fnd_user")
-DB_PASS = os.environ.get("DB_PASS", "fnd@135")
-DB_NAME = os.environ.get("DB_NAME", "fake_news_db")
+if not DATABASE_URL:
+    raise Exception("DATABASE_URL not found in environment variables")
 
-# DB connection (Render will provide a managed DB and you should set env vars)
-db = mysql.connector.connect(
-    host=DB_HOST,
-    user=DB_USER,
-    password=DB_PASS,
-    database=DB_NAME
-)
+conn = psycopg2.connect(DATABASE_URL)
 
-# IMPORTANT: use dictionary cursor everywhere
 def get_cursor():
-    return db.cursor(dictionary=True)
+    return conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
 
 # ==========================
 # ML MODEL
 # ==========================
-# Load model files from backend directory. For production, either commit
-# these files (if allowed) or fetch them from secure storage and set
-# the MODEL_DIR / MODEL_FILE env vars accordingly.
-MODEL_FILE = os.environ.get("MODEL_FILE", os.path.join(BASE_DIR, "model.pkl"))
-VECT_FILE = os.environ.get("VECT_FILE", os.path.join(BASE_DIR, "vectorizer.pkl"))
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+
+MODEL_FILE = os.path.join(BASE_DIR, "model.pkl")
+VECT_FILE = os.path.join(BASE_DIR, "vectorizer.pkl")
 
 if not os.path.exists(MODEL_FILE) or not os.path.exists(VECT_FILE):
-    raise FileNotFoundError(
-        f"Model files not found. Expected {MODEL_FILE} and {VECT_FILE}.\n"
-        "Place them in the backend folder or set MODEL_FILE/VECT_FILE env vars."
-    )
+    raise FileNotFoundError("Model files not found in backend folder")
 
 model = joblib.load(MODEL_FILE)
 vectorizer = joblib.load(VECT_FILE)
@@ -60,15 +48,14 @@ def home():
 @app.route("/register", methods=["POST"])
 def register():
     data = request.json
-
     cursor = get_cursor()
 
     cursor.execute("""
-        INSERT INTO users (username, email, password)
-        VALUES (%s, %s, %s)
+        INSERT INTO users (username, email, password, role, status)
+        VALUES (%s, %s, %s, 'user', 'active')
     """, (data["username"], data["email"], data["password"]))
 
-    db.commit()
+    conn.commit()
 
     return jsonify({"message": "User registered successfully"})
 
@@ -81,7 +68,7 @@ def login():
     cursor = get_cursor()
 
     cursor.execute("""
-        SELECT id, username, email, role
+        SELECT id, username, email, role, status
         FROM users
         WHERE email=%s AND password=%s
     """, (data["email"], data["password"]))
@@ -118,7 +105,7 @@ def predict():
         VALUES (%s, %s, %s, %s)
     """, (user_id, news_text[:100], news_text, result))
 
-    db.commit()
+    conn.commit()
 
     return jsonify({"prediction": result})
 
@@ -127,16 +114,15 @@ def predict():
 # ==========================
 @app.route("/dashboard/<int:user_id>")
 def dashboard(user_id):
-
     cursor = get_cursor()
 
-    cursor.execute("SELECT COUNT(*) as total FROM analyses WHERE user_id=%s", (user_id,))
+    cursor.execute("SELECT COUNT(*) AS total FROM analyses WHERE user_id=%s", (user_id,))
     total = cursor.fetchone()["total"]
 
-    cursor.execute("SELECT COUNT(*) as fake FROM analyses WHERE user_id=%s AND prediction='fake'", (user_id,))
+    cursor.execute("SELECT COUNT(*) AS fake FROM analyses WHERE user_id=%s AND prediction='fake'", (user_id,))
     fake = cursor.fetchone()["fake"]
 
-    cursor.execute("SELECT COUNT(*) as realc FROM analyses WHERE user_id=%s AND prediction='real'", (user_id,))
+    cursor.execute("SELECT COUNT(*) AS realc FROM analyses WHERE user_id=%s AND prediction='real'", (user_id,))
     real = cursor.fetchone()["realc"]
 
     cursor.execute("""
@@ -161,28 +147,27 @@ def dashboard(user_id):
 # ==========================
 @app.route("/admin/dashboard")
 def admin_dashboard():
-
     cursor = get_cursor()
 
-    cursor.execute("SELECT COUNT(*) as c FROM users")
+    cursor.execute("SELECT COUNT(*) AS c FROM users")
     total_users = cursor.fetchone()["c"]
 
-    cursor.execute("SELECT COUNT(*) as c FROM users WHERE status='active'")
+    cursor.execute("SELECT COUNT(*) AS c FROM users WHERE status='active'")
     active_users = cursor.fetchone()["c"]
 
-    cursor.execute("SELECT COUNT(*) as c FROM users WHERE status='blocked'")
+    cursor.execute("SELECT COUNT(*) AS c FROM users WHERE status='blocked'")
     blocked_users = cursor.fetchone()["c"]
 
-    cursor.execute("SELECT COUNT(*) as c FROM users WHERE role='admin'")
+    cursor.execute("SELECT COUNT(*) AS c FROM users WHERE role='admin'")
     admins = cursor.fetchone()["c"]
 
-    cursor.execute("SELECT COUNT(*) as c FROM analyses")
+    cursor.execute("SELECT COUNT(*) AS c FROM analyses")
     total_analyses = cursor.fetchone()["c"]
 
-    cursor.execute("SELECT COUNT(*) as c FROM analyses WHERE prediction='fake'")
+    cursor.execute("SELECT COUNT(*) AS c FROM analyses WHERE prediction='fake'")
     fake_count = cursor.fetchone()["c"]
 
-    cursor.execute("SELECT COUNT(*) as c FROM analyses WHERE prediction='real'")
+    cursor.execute("SELECT COUNT(*) AS c FROM analyses WHERE prediction='real'")
     real_count = cursor.fetchone()["c"]
 
     cursor.execute("""
@@ -206,11 +191,10 @@ def admin_dashboard():
     })
 
 # ==========================
-# ADMIN USERS LIST (FIXED)
+# ADMIN USERS LIST
 # ==========================
 @app.route("/admin/users", methods=["GET"])
 def get_users():
-
     cursor = get_cursor()
 
     cursor.execute("""
@@ -219,11 +203,9 @@ def get_users():
     """)
 
     users = cursor.fetchall()
-
     result = []
 
     for user in users:
-
         user_id = user["id"]
 
         cursor.execute("""
@@ -253,7 +235,6 @@ def get_users():
 # ==========================
 @app.route("/admin/toggle-status/<int:user_id>", methods=["PUT"])
 def toggle_status(user_id):
-
     cursor = get_cursor()
 
     cursor.execute("SELECT status FROM users WHERE id=%s", (user_id,))
@@ -265,7 +246,7 @@ def toggle_status(user_id):
         UPDATE users SET status=%s WHERE id=%s
     """, (new_status, user_id))
 
-    db.commit()
+    conn.commit()
 
     return jsonify({"message": "status updated"})
 
@@ -274,7 +255,6 @@ def toggle_status(user_id):
 # ==========================
 @app.route("/admin/toggle-role/<int:user_id>", methods=["PUT"])
 def toggle_role(user_id):
-
     cursor = get_cursor()
 
     cursor.execute("SELECT role FROM users WHERE id=%s", (user_id,))
@@ -286,7 +266,7 @@ def toggle_role(user_id):
         UPDATE users SET role=%s WHERE id=%s
     """, (new_role, user_id))
 
-    db.commit()
+    conn.commit()
 
     return jsonify({"message": "role updated"})
 
@@ -295,11 +275,10 @@ def toggle_role(user_id):
 # ==========================
 @app.route("/admin/delete-user/<int:user_id>", methods=["DELETE"])
 def delete_user(user_id):
-
     cursor = get_cursor()
 
     cursor.execute("DELETE FROM users WHERE id=%s", (user_id,))
-    db.commit()
+    conn.commit()
 
     return jsonify({"message": "user deleted"})
 
@@ -307,13 +286,5 @@ def delete_user(user_id):
 # RUN
 # ==========================
 if __name__ == "__main__":
-    # Use PORT env var when deployed (Render sets $PORT)
     port = int(os.environ.get("PORT", 5000))
     app.run(host="0.0.0.0", port=port, debug=False)
-
-
-
-
-
-
-
