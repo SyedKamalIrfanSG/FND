@@ -1,36 +1,83 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import "../styles/userdashboard.css";
 
 function UserDashboard() {
   const navigate = useNavigate();
 
+  const user = JSON.parse(localStorage.getItem("user"));
+
   const [news, setNews] = useState("");
+  const [prediction, setPrediction] = useState("");
 
   const [stats, setStats] = useState({
     total: 0,
     fake: 0,
-    verified: 0,
+    real: 0,
+    recent: [],
   });
 
   const handleLogout = () => {
     navigate("/");
   };
 
-  const handleAnalyze = () => {
+  // Load Dashboard Data
+  const loadDashboard = async () => {
+    try {
+      const response = await fetch(
+        `http://127.0.0.1:5000/dashboard/${user.id}`
+      );
+
+      const data = await response.json();
+
+      setStats({
+        total: data.total_analyses,
+        fake: data.fake,
+        real: data.real,
+        recent: data.recent,
+      });
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
+  useEffect(() => {
+    loadDashboard();
+  }, []);
+
+  // Analyze News
+  const handleAnalyze = async () => {
     if (!news.trim()) {
       alert("Please enter news content");
       return;
     }
 
-    alert(
-      "Backend connection pending.\nNews submitted successfully."
-    );
+    try {
+      const response = await fetch(
+        "http://127.0.0.1:5000/predict",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            user_id: user.id,
+            news: news,
+          }),
+        }
+      );
 
-    setStats({
-      ...stats,
-      total: stats.total + 1,
-    });
+      const data = await response.json();
+
+      setPrediction(data.prediction);
+
+      setNews("");
+
+      loadDashboard();
+    } catch (error) {
+      console.error(error);
+      alert("Server Error");
+    }
   };
 
   return (
@@ -47,9 +94,7 @@ function UserDashboard() {
 
           <div>
             <h2>Fake News Detector</h2>
-            <p>
-              AI Powered Fake News Checking System
-            </p>
+            <p>AI Powered Fake News Checking System</p>
           </div>
 
         </div>
@@ -63,10 +108,10 @@ function UserDashboard() {
 
       </nav>
 
-      {/* MAIN CONTENT */}
+      {/* MAIN */}
       <div className="main-container">
 
-        {/* LEFT SIDE */}
+        {/* LEFT */}
         <div className="left-panel">
 
           <div className="info-card">
@@ -107,7 +152,7 @@ function UserDashboard() {
 
         </div>
 
-        {/* RIGHT SIDE */}
+        {/* RIGHT */}
         <div className="right-panel">
 
           <div className="stats-card">
@@ -120,21 +165,21 @@ function UserDashboard() {
             <div className="stats-content">
 
               <div className="stat-row">
-                <p>Analyses Today</p>
+                <p>Total Analyses</p>
                 <span>{stats.total}</span>
               </div>
 
               <div className="stat-row">
-                <p>Fake Content</p>
+                <p>Fake News</p>
                 <span className="red">
                   {stats.fake}
                 </span>
               </div>
 
               <div className="stat-row">
-                <p>Verified Content</p>
+                <p>Real News</p>
                 <span className="green">
-                  {stats.verified}
+                  {stats.real}
                 </span>
               </div>
 
@@ -142,6 +187,30 @@ function UserDashboard() {
 
           </div>
 
+          {/* Prediction Card */}
+          {prediction && (
+            <div className="recent-card">
+
+              <h2>
+                <i className="fa-solid fa-brain"></i>
+                {" "}Prediction Result
+              </h2>
+
+              <h3
+                style={{
+                  textAlign: "center",
+                  marginTop: "15px",
+                }}
+              >
+                {prediction === "real"
+                  ? "REAL NEWS ✅"
+                  : "FAKE NEWS ❌"}
+              </h3>
+
+            </div>
+          )}
+
+          {/* Recent Analyses */}
           <div className="recent-card">
 
             <h2>
@@ -149,10 +218,33 @@ function UserDashboard() {
               {" "}Recent Analyses
             </h2>
 
-            <p className="empty-text">
-              No analyses yet...
-              Start by checking some content.
-            </p>
+            {stats.recent.length === 0 ? (
+              <p className="empty-text">
+                No analyses yet...
+              </p>
+            ) : (
+              stats.recent.map((item, index) => (
+                <div
+                  key={index}
+                  style={{
+                    marginBottom: "15px",
+                    borderBottom:
+                      "1px solid #ddd",
+                    paddingBottom: "10px",
+                  }}
+                >
+                  <strong>
+                    {item.title}
+                  </strong>
+
+                  <p>
+                    {item.prediction === "real"
+                      ? "✅ REAL"
+                      : "❌ FAKE"}
+                  </p>
+                </div>
+              ))
+            )}
 
           </div>
 

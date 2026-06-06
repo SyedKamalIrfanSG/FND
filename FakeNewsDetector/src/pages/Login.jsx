@@ -8,26 +8,51 @@ function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
-  const handleLogin = (e) => {
+  const handleLogin = async (e) => {
     e.preventDefault();
 
-    if (password.includes("USER135")) {
-      navigate("/user-dashboard");
-    }
-    else if (password.includes("ADMIN690")) {
-      navigate("/admin-dashboard");
-    }
-    else {
-      alert(
-        "Invalid Password!\n\nUser Password Format:\nYourPasswordUSER135\n\nAdmin Password Format:\nYourPasswordADMIN690"
+    try {
+      const response = await fetch(
+        "http://127.0.0.1:5000/login",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            email,
+            password,
+          }),
+        }
       );
+
+      const data = await response.json();
+
+      if (response.ok) {
+        localStorage.setItem(
+          "user",
+          JSON.stringify(data.user)
+        );
+
+        alert("Login Successful!");
+
+        if (data.user.role === "admin") {
+          navigate("/admin-dashboard");
+        } else {
+          navigate("/user-dashboard");
+        }
+      } else {
+        alert(data.message);
+      }
+    } catch (error) {
+      console.error(error);
+      alert("Cannot connect to server");
     }
   };
 
   return (
     <div className="main-container">
 
-      {/* LEFT PART */}
       <div className="left-section">
         <img
           src="/detective.jpeg"
@@ -36,10 +61,8 @@ function Login() {
         />
       </div>
 
-      {/* RIGHT PART */}
       <div className="right-section">
 
-        {/* LOGO */}
         <div className="logo-title">
           <div className="logo-box">
             <i className="fa-solid fa-shield-halved"></i>
@@ -52,22 +75,26 @@ function Login() {
           Sign in to access AI-powered news verification
         </p>
 
-        {/* TABS */}
         <div className="tabs">
 
-          <Link to="/" className="tab active">
+          <Link
+            to="/"
+            className="tab active"
+          >
             <i className="fa-solid fa-right-to-bracket"></i>
             LOGIN
           </Link>
 
-          <Link to="/register" className="tab">
+          <Link
+            to="/register"
+            className="tab"
+          >
             <i className="fa-solid fa-user-plus"></i>
             REGISTER
           </Link>
 
         </div>
 
-        {/* FORM */}
         <form onSubmit={handleLogin}>
 
           <input
@@ -96,9 +123,6 @@ function Login() {
           >
             Sign In
           </button>
-              <p className="password-note">
-            Password must contain <strong>USER135</strong>
-          </p>
 
         </form>
 

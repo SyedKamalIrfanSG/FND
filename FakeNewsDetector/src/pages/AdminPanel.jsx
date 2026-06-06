@@ -1,126 +1,68 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import "../styles/adminpanel.css";
 
 function AdminPanel() {
+  const navigate = useNavigate();
 
-  const navigate = useNavigate("/admindashboard");
-
-  // ADMIN INFO
   const [adminData] = useState({
     name: "Admin User",
     email: "admin@example.com",
   });
 
-  // USERS
-  const [users, setUsers] = useState([
-    {
-      id: 1,
-      name: "Admin User",
-      email: "admin@example.com",
-      role: "Admin",
-      status: "active",
-      analyses: 156,
-      joined: "1/15/2024",
-    },
-    {
-      id: 2,
-      name: "John Doe",
-      email: "user@example.com",
-      role: "User",
-      status: "active",
-      analyses: 42,
-      joined: "3/20/2024",
-    },
-    {
-      id: 3,
-      name: "Jane Smith",
-      email: "jane@example.com",
-      role: "User",
-      status: "active",
-      analyses: 28,
-      joined: "4/10/2024",
-    },
-    {
-      id: 4,
-      name: "Bob Wilson",
-      email: "bob@example.com",
-      role: "User",
-      status: "blocked",
-      analyses: 15,
-      joined: "2/5/2024",
-    },
-    {
-      id: 5,
-      name: "Alice Cooper",
-      email: "alice@example.com",
-      role: "Admin",
-      status: "active",
-      analyses: 67,
-      joined: "5/1/2024",
-    },
-  ]);
+  const [users, setUsers] = useState([]);
+  const [loading, setLoading] = useState(true);
 
-  // BLOCK USER
-  const toggleBlock = (id) => {
-    setUsers((prevUsers) =>
-      prevUsers.map((user) =>
-        user.id === id
-          ? {
-            ...user,
-            status:
-              user.status === "active"
-                ? "blocked"
-                : "active",
-          }
-          : user
-      )
-    );
+  // =========================
+  // FETCH USERS FROM BACKEND
+  // =========================
+  const fetchUsers = async () => {
+    try {
+      setLoading(true);
+
+      const res = await fetch("http://127.0.0.1:5000/admin/users");
+      const data = await res.json();
+
+      setUsers(data);
+    } catch (err) {
+      console.error("Fetch error:", err);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  // CHANGE ROLE
-  const toggleRole = (id) => {
-    setUsers((prevUsers) =>
-      prevUsers.map((user) =>
-        user.id === id
-          ? {
-            ...user,
-            role:
-              user.role === "Admin"
-                ? "User"
-                : "Admin",
-          }
-          : user
-      )
-    );
+  useEffect(() => {
+    fetchUsers();
+  }, []);
+
+  // =========================
+  // ACTIONS
+  // =========================
+  const toggleBlock = async (id) => {
+    await fetch(`http://127.0.0.1:5000/admin/toggle-status/${id}`, {
+      method: "PUT",
+    });
+    fetchUsers();
   };
 
-  // DELETE USER
-  const deleteUser = (id) => {
-    setUsers((prevUsers) =>
-      prevUsers.filter((user) => user.id !== id)
-    );
+  const toggleRole = async (id) => {
+    await fetch(`http://127.0.0.1:5000/admin/toggle-role/${id}`, {
+      method: "PUT",
+    });
+    fetchUsers();
   };
 
-  // STATS
-  const totalUsers = users.length;
-
-  const activeUsers = users.filter(
-    (user) => user.status === "active"
-  ).length;
-
-  const blockedUsers = users.filter(
-    (user) => user.status === "blocked"
-  ).length;
-
-  const admins = users.filter(
-    (user) => user.role === "Admin"
-  ).length;
-
-  // LOGOUT
   const handleLogout = () => {
     navigate("/");
   };
+
+  // =========================
+  // STATS
+  // =========================
+  const totalUsers = users.length;
+  const activeUsers = users.filter((u) => u.status === "active").length;
+  const blockedUsers = users.filter((u) => u.status === "blocked").length;
+  const admins = users.filter((u) => u.role === "Admin").length;
 
   return (
     <div className="admin-page">
@@ -129,34 +71,29 @@ function AdminPanel() {
       <header className="admin-header">
 
         <div className="header-left">
-
           <div className="shield-box">
             <i className="fa-solid fa-shield-halved"></i>
           </div>
 
           <div>
             <h1>Admin Dashboard</h1>
-            <p>User Management & System Control</p>
+            <p>User Management & Analytics</p>
           </div>
-
         </div>
 
         <div className="header-right">
 
           <Link to="/admin-dashboard" className="header-btn">
             <i className="fa-solid fa-arrow-left"></i>
-            Back to App
+            Back
           </Link>
 
           <div className="admin-info">
             <h4>{adminData.name}</h4>
             <p>{adminData.email}</p>
           </div>
-          
-          <button
-            className="header-btn"
-            onClick={handleLogout}
-          >
+
+          <button className="header-btn" onClick={handleLogout}>
             <i className="fa-solid fa-right-from-bracket"></i>
             Logout
           </button>
@@ -172,7 +109,6 @@ function AdminPanel() {
           <div className="stat-icon blue">
             <i className="fa-solid fa-users"></i>
           </div>
-
           <div>
             <h3>Total Users</h3>
             <h2>{totalUsers}</h2>
@@ -183,7 +119,6 @@ function AdminPanel() {
           <div className="stat-icon green">
             <i className="fa-solid fa-circle-check"></i>
           </div>
-
           <div>
             <h3>Active Users</h3>
             <h2>{activeUsers}</h2>
@@ -194,7 +129,6 @@ function AdminPanel() {
           <div className="stat-icon red">
             <i className="fa-solid fa-circle-xmark"></i>
           </div>
-
           <div>
             <h3>Blocked Users</h3>
             <h2>{blockedUsers}</h2>
@@ -205,7 +139,6 @@ function AdminPanel() {
           <div className="stat-icon purple">
             <i className="fa-solid fa-user-shield"></i>
           </div>
-
           <div>
             <h3>Admins</h3>
             <h2>{admins}</h2>
@@ -237,74 +170,52 @@ function AdminPanel() {
 
           <tbody>
 
-            {users.map((user) => (
-
-              <tr key={user.id}>
-
-                <td>{user.name}</td>
-
-                <td>{user.email}</td>
-
-                <td>
-                  <span
-                    className={
-                      user.role === "Admin"
-                        ? "role admin-role"
-                        : "role user-role"
-                    }
-                  >
-                    {user.role}
-                  </span>
-                </td>
-
-                <td>
-                  <span
-                    className={
-                      user.status === "active"
-                        ? "status active-status"
-                        : "status blocked-status"
-                    }
-                  >
-                    {user.status}
-                  </span>
-                </td>
-
-                <td>{user.analyses}</td>
-
-                <td>{user.joined}</td>
-
-                <td>
-
-                  <div className="action-buttons">
-
-                    <button
-                      className="action-btn role-btn"
-                      onClick={() => toggleRole(user.id)}
-                    >
-                      <i className="fa-solid fa-user-gear"></i>
-                    </button>
-
-                    <button
-                      className="action-btn block-btn"
-                      onClick={() => toggleBlock(user.id)}
-                    >
-                      <i className="fa-solid fa-ban"></i>
-                    </button>
-
-                    <button
-                      className="action-btn delete-btn"
-                      onClick={() => deleteUser(user.id)}
-                    >
-                      <i className="fa-solid fa-trash"></i>
-                    </button>
-
-                  </div>
-
-                </td>
-
+            {loading ? (
+              <tr>
+                <td colSpan="7">Loading users...</td>
               </tr>
+            ) : users.length === 0 ? (
+              <tr>
+                <td colSpan="7">No users found</td>
+              </tr>
+            ) : (
+              users.map((user) => (
+                <tr key={user.id}>
+                  <td>{user.name}</td>
+                  <td>{user.email}</td>
 
-            ))}
+                  <td>
+                    <span className={user.role === "Admin" ? "admin-role" : "user-role"}>
+                      {user.role}
+                    </span>
+                  </td>
+
+                  <td>
+                    <span className={user.status === "active" ? "active-status" : "blocked-status"}>
+                      {user.status}
+                    </span>
+                  </td>
+
+                  <td>{user.analyses}</td>
+                  <td>{user.joined}</td>
+
+                  <td>
+                    <div className="action-buttons">
+
+                      <button className="action-btn role-btn" onClick={() => toggleRole(user.id)}>
+                        <i className="fa-solid fa-user-gear"></i>
+                      </button>
+
+                      <button className="action-btn block-btn" onClick={() => toggleBlock(user.id)}>
+                        <i className="fa-solid fa-ban"></i>
+                      </button>
+
+                    </div>
+                  </td>
+
+                </tr>
+              ))
+            )}
 
           </tbody>
 
