@@ -2,18 +2,27 @@ from flask import Flask, request, jsonify
 from flask_cors import CORS
 import mysql.connector
 import joblib
+import os
 
 app = Flask(__name__)
 CORS(app)
 
 # ==========================
-# DB CONNECTION
+# CONFIG (from env vars for production)
 # ==========================
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+
+DB_HOST = os.environ.get("DB_HOST", "localhost")
+DB_USER = os.environ.get("DB_USER", "fnd_user")
+DB_PASS = os.environ.get("DB_PASS", "fnd@135")
+DB_NAME = os.environ.get("DB_NAME", "fake_news_db")
+
+# DB connection (Render will provide a managed DB and you should set env vars)
 db = mysql.connector.connect(
-    host="localhost",
-    user="fnd_user",
-    password="fnd@135",
-    database="fake_news_db"
+    host=DB_HOST,
+    user=DB_USER,
+    password=DB_PASS,
+    database=DB_NAME
 )
 
 # IMPORTANT: use dictionary cursor everywhere
@@ -23,8 +32,20 @@ def get_cursor():
 # ==========================
 # ML MODEL
 # ==========================
-model = joblib.load("model.pkl")
-vectorizer = joblib.load("vectorizer.pkl")
+# Load model files from backend directory. For production, either commit
+# these files (if allowed) or fetch them from secure storage and set
+# the MODEL_DIR / MODEL_FILE env vars accordingly.
+MODEL_FILE = os.environ.get("MODEL_FILE", os.path.join(BASE_DIR, "model.pkl"))
+VECT_FILE = os.environ.get("VECT_FILE", os.path.join(BASE_DIR, "vectorizer.pkl"))
+
+if not os.path.exists(MODEL_FILE) or not os.path.exists(VECT_FILE):
+    raise FileNotFoundError(
+        f"Model files not found. Expected {MODEL_FILE} and {VECT_FILE}.\n"
+        "Place them in the backend folder or set MODEL_FILE/VECT_FILE env vars."
+    )
+
+model = joblib.load(MODEL_FILE)
+vectorizer = joblib.load(VECT_FILE)
 
 # ==========================
 # HOME
@@ -286,4 +307,6 @@ def delete_user(user_id):
 # RUN
 # ==========================
 if __name__ == "__main__":
-    app.run(debug=True)
+    # Use PORT env var when deployed (Render sets $PORT)
+    port = int(os.environ.get("PORT", 5000))
+    app.run(host="0.0.0.0", port=port, debug=False)
