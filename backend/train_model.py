@@ -1,60 +1,150 @@
-import pandas as pd
+from flask import Flask, request, jsonify
+from flask_cors import CORS
+import mysql.connector
 import joblib
+import os
 
-from sklearn.model_selection import train_test_split
-from sklearn.feature_extraction.text import TfidfVectorizer
-from sklearn.linear_model import LogisticRegression
-from sklearn.metrics import accuracy_score
+app = Flask(__name__)
+CORS(app)
 
-# Load datasets
-true_df = pd.read_csv("dataset/True.csv/True.csv")
-fake_df = pd.read_csv("dataset/Fake.csv/Fake.csv")
-
-# Labels
-true_df["label"] = 1
-fake_df["label"] = 0
-
-# Merge datasets
-df = pd.concat([true_df, fake_df], ignore_index=True)
-
-# Combine title and text
-df["content"] = df["title"] + " " + df["text"]
-
-# Features and labels
-X = df["content"]
-y = df["label"]
-
-# Train/Test Split
-X_train, X_test, y_train, y_test = train_test_split(
-    X,
-    y,
-    test_size=0.2,
-    random_state=42
+# =========================
+# DB CONNECTION
+# =========================
+db = mysql.connector.connect(
+    host="localhost",
+    user="fnd_user",
+    password="fnd@135",
+    database="fake_news_db"
 )
 
-# TF-IDF Vectorizer
-vectorizer = TfidfVectorizer(stop_words="english", max_df=0.7)
+cursor = db.cursor()
 
-X_train_tfidf = vectorizer.fit_transform(X_train)
-X_test_tfidf = vectorizer.transform(X_test)
+# =========================
+# LOAD ML MODEL (FIXED PATH)
+# =========================
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
-# Logistic Regression
-model = LogisticRegression(max_iter=1000)
+model = joblib.load(os.path.join(BASE_DIR, "model.pkl"))
+vectorizer = joblib.load(os.path.join(BASE_DIR, "vectorizer.pkl"))
 
-print("Training model... Please wait.")
+# =========================
+# HOME
+# =========================
+@app.route("/")
+def home():
+    return "Backend Running 🚀"
 
-model.fit(X_train_tfidf, y_train)
+# =========================
+# PREDICT
+# =========================
+@app.route("/predict", methods=["POST"])
+def predict():
+    data = request.json
 
-# Prediction
-y_pred = model.predict(X_test_tfidf)
+    user_id = data.get("user_id")
+    news_text = data.get("news", "")
 
-accuracy = accuracy_score(y_test, y_pred)
+    # IMPORTANT: same preprocessing as training
+    content = news_text.lower()
 
-print("\nModel Accuracy:", round(accuracy * 100, 2), "%")
+    vector = vectorizer.transform([content])
+    prediction = model.predict(vector)[0]
 
-# Save files
-joblib.dump(model, "model.pkl")
-joblib.dump(vectorizer, "vectorizer.pkl")
+    result = "real" if prediction == 1 else "fake"
 
-print("\nmodel.pkl saved")
-print("vectorizer.pkl saved")
+    cursor.execute("""
+        INSERT INTO analyses (user_id, title, content, prediction)
+        VALUES (%s, %s, %s, %s)
+    """, (user_id, news_text[:100], news_text, result))
+
+    db.commit()
+
+    return jsonify({
+        "prediction": result
+    })
+
+# =========================
+# ADMIN USERS (FIXED YOUR SQL ISSUE)
+# =========================
+@app.route("/admin/users", methods=["GET"])
+def get_users():
+
+    cursor.execute("""
+        SELECT id, username, email, role, status, created_at
+        FROM users
+    """)
+
+    rows = cursor.fetchall()
+
+    result = []
+
+    for row in rows:
+
+        user_id = row[0]
+
+        # latest analysis
+        cursor.execute("""
+            SELECT prediction
+            FROM analyses
+            WHERE user_id=%s
+            ORDER BY id DESC
+            LIMIT 1
+        """, (user_id,))
+
+        last = cursor.fetchone()
+
+        result.append({
+            "id": row[0],
+            "name": row[1],
+            "email": row[2],
+            "role": row[3],
+            "status": row[4],
+            "joined": str(row[5]),
+            "analyses": last[0] if last else "No data"
+        })
+
+    return jsonify(result)
+
+# =========================
+# TOGGLE STATUS
+# =========================
+@app.route("/admin/toggle-status/<int:user_id>", methods=["PUT"])
+def toggle_status(user_id):
+
+    cursor.execute("SELECT status FROM users WHERE id=%s", (user_id,))
+    status = cursor.fetchone()[0]
+
+    new_status = "blocked" if status == "active" else "active"
+
+    cursor.execute("""
+        UPDATE users SET status=%s WHERE id=%s
+    """, (new_status, user_id))
+
+    db.commit()
+
+    return jsonify({"message": "updated"})
+
+# =========================
+# TOGGLE ROLE
+# =========================
+@app.route("/admin/toggle-role/<int:user_id>", methods=["PUT"])
+def toggle_role(user_id):
+
+    cursor.execute("SELECT role FROM users WHERE id=%s", (user_id,))
+    role = cursor.fetchone()[0]
+
+    new_role = "admin" if role == "user" else "admin"
+
+    cursor.execute("""
+        UPDATE users SET role=%s WHERE id=%s
+    """, (new_role, user_id))
+
+    db.commit()
+
+    return jsonify({"message": "updated"})
+
+# =========================
+# RUN SERVER
+# =========================
+if __name__ == "__main__":
+    app.run(debug=True)

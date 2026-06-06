@@ -90,7 +90,7 @@ function AdminPanel() {
 
           <div className="admin-info">
             <h4>{adminData.name}</h4>
-            <p>{adminData.email}</p>
+            {/* <p>{adminData.email}</p> */}
           </div>
 
           <button className="header-btn" onClick={handleLogout}>
