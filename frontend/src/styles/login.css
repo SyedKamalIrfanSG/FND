@@ -134,6 +134,7 @@ form input{
     padding:0 20px;
     font-size:15px;
     box-shadow:0 3px 6px rgba(0,0,0,0.12);
+    margin-left:40px;
 }
 
 /* BUTTON */
@@ -150,7 +151,10 @@ form input{
     margin-top:10px;
     box-shadow:0 4px 10px rgba(16,168,245,0.4);
     transition:0.3s;
+     margin-left:40px;
 }
+
+
 
 .signin-btn:hover{
     background:#0d97de;
@@ -163,6 +167,7 @@ form input{
     margin-top:15px;
     font-size:14px;
     color:#666;
+     margin-left:120px;
 }
 
 .password-note strong{
