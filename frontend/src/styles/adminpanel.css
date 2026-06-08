@@ -187,21 +187,44 @@ th{
 .admin-role{
     background:#ef4444;
     color:white;
+border-radius:10px;
+padding:10px;
 }
-
+.admin-role:hover{
+    border-radius:5px;
+    transition:0.5s ease;
+  
+}
 .user-role{
     background:#e5e7eb;
     color:#111827;
+    border-radius:10px;
+padding:15px;
 }
+.user-role:hover{
+    border-radius:5px;
+    transition:0.5s ease;
+  
+}
+
 
 .active-status{
     border:1px solid #16a34a;
     color:#16a34a;
+    border-radius:10px;
+padding:10px;
+}
+.active-status:hover{
+    border-radius:5px;
+    transition:0.5s ease;
+  
 }
 
 .blocked-status{
     border:1px solid #ef4444;
     color:#ef4444;
+    border-radius:10px;
+padding:10px;
 }
 
 .action-buttons{
