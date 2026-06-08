@@ -8,15 +8,18 @@ import os
 app = Flask(__name__)
 CORS(app)
 
-# ==========================
-# DATABASE CONFIG (POSTGRES)
-# ==========================
+
+
+
+
+
 DATABASE_URL = os.environ.get("DATABASE_URL")
 
 if not DATABASE_URL:
-    raise Exception("DATABASE_URL not found in environment variables")
+    raise Exception("DATABASE_URL not found")
 
 conn = psycopg2.connect(DATABASE_URL)
+conn.autocommit = True
 
 def get_cursor():
     return conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
@@ -47,41 +50,73 @@ def home():
 # ==========================
 @app.route("/register", methods=["POST"])
 def register():
-    data = request.json
-    cursor = get_cursor()
+    try:
+        data = request.json
+        cursor = get_cursor()
 
-    cursor.execute("""
-        INSERT INTO users (username, email, password, role, status)
-        VALUES (%s, %s, %s, 'user', 'active')
-    """, (data["username"], data["email"], data["password"]))
+        cursor.execute("""
+            INSERT INTO users
+            (username, email, password, role, status)
+            VALUES (%s, %s, %s, 'user', 'active')
+        """, (
+            data["username"],
+            data["email"],
+            data["password"]
+        ))
 
-    conn.commit()
+        return jsonify({
+            "message": "User registered successfully"
+        })
 
-    return jsonify({"message": "User registered successfully"})
+    except Exception as e:
+        conn.rollback()
+        return jsonify({
+            "error": str(e)
+        }), 500
 
 # ==========================
 # LOGIN
 # ==========================
 @app.route("/login", methods=["POST"])
 def login():
-    data = request.json
-    cursor = get_cursor()
+    try:
+        data = request.json
 
-    cursor.execute("""
-        SELECT id, username, email, role, status
-        FROM users
-        WHERE email=%s AND password=%s
-    """, (data["email"], data["password"]))
+        cursor = get_cursor()
 
-    user = cursor.fetchone()
+        cursor.execute("""
+            SELECT
+                id,
+                username,
+                email,
+                role,
+                status
+            FROM users
+            WHERE email=%s
+            AND password=%s
+        """, (
+            data["email"],
+            data["password"]
+        ))
 
-    if user:
+        user = cursor.fetchone()
+
+        if user:
+            return jsonify({
+                "message": "Login successful",
+                "user": user
+            })
+
         return jsonify({
-            "message": "Login successful",
-            "user": user
-        })
+            "message": "Invalid credentials"
+        }), 401
 
-    return jsonify({"message": "Invalid credentials"}), 401
+    except Exception as e:
+        conn.rollback()
+
+        return jsonify({
+            "error": str(e)
+        }), 500
 
 # ==========================
 # PREDICT NEWS
